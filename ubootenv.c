@@ -96,13 +96,22 @@ static uint32_t crc32(const char *buffer, size_t size) {
 }
 
 static void envimg_buffer_lock() {
-  int max_retry_cnt = 1000;
-  while (__sync_val_compare_and_swap(&gs_env_shm_info->lock, 0, 1) &&
-         max_retry_cnt-- > 0)
+  unsigned int max_retry_cnt = 0;
+  while (__sync_val_compare_and_swap(&gs_env_shm_info->lock, 0, 1)) {
+    if (max_retry_cnt++ >= 1000) {
+      ERROR("[ubootenv][%d] envimg_buffer_lock failed !!! lock=%d, retry..\n",
+            gettid(), gs_env_shm_info->lock);
+      max_retry_cnt = 0;
+    }
+
     usleep(1000);
+  }
 }
 
 static void envimg_buffer_unlock() {
+  if (gs_env_shm_info->lock != 1)
+    ERROR("[ubootenv][%d] envimg_buffer_unlock failed! lock = %d\n", gettid(),
+          gs_env_shm_info->lock);
   assert(__sync_val_compare_and_swap(&gs_env_shm_info->lock, 1, 0));
 }
 
@@ -405,7 +414,7 @@ static int save_bootenv() {
   env_serialize_data();
   *(gs_env_data.crc) = crc32(gs_env_data.data, gs_env_data_size);
 
-  if ((fd = open(gs_partition_name, O_RDWR)) < 0) {
+  if ((fd = open(gs_partition_name, O_RDWR | O_SYNC)) < 0) {
     ERROR("[ubootenv] open devices error\n");
     return -1;
   }
@@ -463,22 +472,13 @@ static int save_bootenv() {
     // emmc and nand needn't erase
     err = write(fd, gs_env_data.image, gs_env_partition_size);
   }
-
-  FILE *fp = NULL;
-  fp = fdopen(fd, "r+");
-  if (fp == NULL) {
-    ERROR("fdopen failed!\n");
+  if (err < 0) {
+    ERROR("[ubootenv] ERROR write, size %d \n", gs_env_partition_size);
     close(fd);
     return -3;
   }
 
-  fflush(fp);
-  fsync(fd);
-  fclose(fp);
-  if (err < 0) {
-    ERROR("[ubootenv] ERROR write, size %d \n", gs_env_partition_size);
-    return -3;
-  }
+  close(fd);
   return 0;
 }
 
