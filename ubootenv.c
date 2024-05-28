@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <sys/syscall.h>
 #ifdef MTD_OLD
 #include <linux/mtd/mtd.h>
 #else
@@ -93,6 +93,14 @@ static uint32_t crc32(const char *buffer, size_t size) {
   }
 
   return ~crc;
+}
+
+// For gcc version is not new enough, e.g. gcc 7.3.1, the glibc has no gettid function.
+// So implement a weak function here for fallback.
+pid_t gettid(void) __attribute__((weak));
+pid_t gettid(void)
+{
+  return syscall(__NR_gettid);
 }
 
 static void envimg_buffer_lock() {
