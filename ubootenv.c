@@ -124,7 +124,7 @@ static void envimg_buffer_unlock() {
 }
 
 static char *acquire_envimg_buffer() {
-  if (gs_env_shm_info && gs_env_shm_info->imgdata != NULL) {
+  if (gs_env_shm_info) {
     return gs_env_shm_info->imgdata;
   }
 
@@ -147,7 +147,7 @@ static char *acquire_envimg_buffer() {
     fd = open(ENV_IMG_SHM_NAME, O_RDWR);
     if (fd == -1) {
       perror("open");
-      goto failure;
+      return NULL;
     }
   }
 
@@ -365,12 +365,14 @@ static const char *bootenv_get_value(const char *key) {
     return NULL;
   }
 
+  const char *val = NULL;
   pthread_mutex_lock(&gs_kv_lock);
   env_kv *attr;
   for (attr = &gs_kv_header; attr && strcmp(key, attr->key); attr = attr->next)
     ;
+  val = attr ? attr->value : NULL;
   pthread_mutex_unlock(&gs_kv_lock);
-  return attr ? attr->value : NULL;
+  return val;
 }
 
 /*
@@ -525,7 +527,8 @@ static void find_mtd_partitions(void)
             }
             INFO("mtd partition %d, %s\n", mtdnum, mtdname + 1);
             if (mtd_part_count < MAX_MTD_PARTITIONS) {
-                strcpy(mtd_part_map[mtd_part_count].name, mtdname + 1);
+                strncpy(mtd_part_map[mtd_part_count].name, mtdname + 1,
+                    sizeof(mtd_part_map[mtd_part_count].name) - 1);
                 mtd_part_map[mtd_part_count].number = mtdnum;
                 mtd_part_count++;
             } else {
