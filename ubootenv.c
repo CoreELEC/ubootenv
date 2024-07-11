@@ -571,6 +571,10 @@ int bootenv_init(void) {
   if (gs_init_done)
     return 0;
   int id = mtd_name_to_number("ubootenv");
+
+  if (id < 0) {
+    id = mtd_name_to_number("env");
+  }
   if (id >= 0) {
   sprintf(gs_partition_name, "/dev/mtd%d", id);
   if ((fd = open (gs_partition_name, O_RDWR)) < 0) {
