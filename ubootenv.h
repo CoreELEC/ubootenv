@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache2.0
+/*
+ * Copyright (C) 2024 Amlogic Inc.
+ */
 
 #ifndef _INIT_BOOTENV_H
 #define _INIT_BOOTENV_H

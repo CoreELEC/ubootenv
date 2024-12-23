@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache2.0
+/*
+ * Copyright (C) 2024 Amlogic Inc.
+ */
 #define LOG_TAG "SystemControl"
 
 #include <assert.h>

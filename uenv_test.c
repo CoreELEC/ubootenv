@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache2.0
+/*
+ * Copyright (C) 2024 Amlogic Inc.
+ */
 #include "ubootenv.h"
 #include <stdint.h>
 #include <stdio.h>
