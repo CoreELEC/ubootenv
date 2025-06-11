@@ -124,7 +124,10 @@ static void envimg_buffer_unlock() {
   if (gs_env_shm_info->lock != 1)
     ERROR("[ubootenv][%d] envimg_buffer_unlock failed! lock = %d\n", gettid(),
           gs_env_shm_info->lock);
-  assert(__sync_val_compare_and_swap(&gs_env_shm_info->lock, 1, 0));
+  else {
+    int old_value = __sync_val_compare_and_swap(&gs_env_shm_info->lock, 1, 0);
+    assert(old_value == 1);
+  }
 }
 
 static char *acquire_envimg_buffer() {
